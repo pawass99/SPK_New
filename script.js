@@ -169,11 +169,18 @@ function renderHeader() {
         <h1>Dashboard Pemilihan Laptop Mahasiswa</h1>
         <p class="subtitle">Sistem Pendukung Keputusan menggunakan metode PROMETHEE. Dashboard ini membandingkan laptop berdasarkan harga, performa, baterai, kapasitas, GPU, dan berat.</p>
       </div>
-      <div class="badge-row" aria-label="Status dashboard">
-        <span class="badge">PROMETHEE</span>
-        <span class="badge ${isWeightValid(criteria) ? 'good' : 'warn'}">Bobot ${isWeightValid(criteria) ? 'valid' : 'belum valid'}: ${formatNumber(totalWeight, 2)}</span>
-        <span class="badge">Data contoh aktif</span>
-        ${best ? `<span class="badge good">Terbaik: ${escapeHtml(best.code)}</span>` : ''}
+      <div>
+        <div class="badge-row" aria-label="Status dashboard">
+          <span class="badge">PROMETHEE</span>
+          <span class="badge ${isWeightValid(criteria) ? 'good' : 'warn'}">Bobot ${isWeightValid(criteria) ? 'valid' : 'belum valid'}: ${formatNumber(totalWeight, 2)}</span>
+          <span class="badge">Data contoh aktif</span>
+          ${best ? `<span class="badge good">Terbaik: ${escapeHtml(best.code)}</span>` : ''}
+        </div>
+        <div class="report-meta">
+          <div>Decision Report</div>
+          <div>${alternatives.length} alternatif / ${criteria.length} kriteria</div>
+          <div>Indeks preferensi rata-rata</div>
+        </div>
       </div>
     </div>
   `;
@@ -210,8 +217,9 @@ function renderMetricCards(result) {
 
   return `
     <section class="metrics">
-      ${cards.map((card) => `
+      ${cards.map((card, index) => `
         <article class="metric-card">
+          <span class="metric-index">${String(index + 1).padStart(2, '0')}</span>
           <div class="metric-label">${escapeHtml(card.label)}</div>
           <div class="metric-value">${escapeHtml(card.value)}</div>
           <div class="metric-note">${escapeHtml(card.note)}</div>
@@ -243,7 +251,7 @@ function renderDashboard() {
     <section class="dashboard-grid">
       <article class="recommendation">
         <div>
-          <p class="section-label">Rekomendasi Utama</p>
+          <span class="recommend-kicker">Rekomendasi Utama / ${escapeHtml(best.code)}</span>
           <div class="recommend-name">${escapeHtml(best.name)}</div>
           <p class="soft-copy">${escapeHtml(best.code)} menjadi ranking pertama dengan Net Flow tertinggi.</p>
         </div>
@@ -252,7 +260,7 @@ function renderDashboard() {
           <div class="flow-chip"><span>Leaving Flow</span><strong>${formatNumber(best.leaving)}</strong></div>
           <div class="flow-chip"><span>Entering Flow</span><strong>${formatNumber(best.entering)}</strong></div>
         </div>
-        <p class="soft-copy">Laptop ini menjadi rekomendasi utama karena memiliki nilai Net Flow tertinggi. Artinya, laptop ini lebih banyak mengungguli alternatif lain dibandingkan dikalahkan oleh alternatif lain.</p>
+        <p class="recommend-interpretation">Laptop ini menjadi rekomendasi utama karena memiliki nilai Net Flow tertinggi. Artinya, laptop ini lebih banyak mengungguli alternatif lain dibandingkan dikalahkan oleh alternatif lain.</p>
         <div class="toolbar">
           <button class="button primary" type="button" data-action="download-csv">Download Ranking CSV</button>
           <button class="button secondary" type="button" data-tab-link="calculation">Lihat Perhitungan</button>
@@ -273,34 +281,19 @@ function renderDashboard() {
 
     <section class="dashboard-grid">
       <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="section-label">Ranking Akhir</p>
-            <h2>Urutan rekomendasi laptop</h2>
-          </div>
-        </div>
+        ${renderChapterHeading('01', 'Ranking Akhir', 'Urutan rekomendasi laptop', 'Daftar ini diurutkan berdasarkan Net Flow terbesar, lalu diberi status rekomendasi.')}
         ${renderRankingTable(filtered)}
       </article>
 
       <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="section-label">Net Flow</p>
-            <h2>Bar chart ranking</h2>
-          </div>
-        </div>
+        ${renderChapterHeading('02', 'Net Flow', 'Bar chart ranking', 'Garis tengah menunjukkan nol, sehingga nilai negatif tetap mudah dibaca.')}
         ${renderNetFlowChart(result.ranking)}
       </article>
     </section>
 
     <section class="split">
       <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="section-label">Filter Data</p>
-            <h2>Cari laptop</h2>
-          </div>
-        </div>
+        ${renderChapterHeading('03', 'Filter Data', 'Cari laptop', 'Gunakan kode atau nama untuk melihat alternatif tertentu tanpa mengubah hasil perhitungan.')}
         <div class="field">
           <label for="searchLaptop">Kode atau nama laptop</label>
           <input id="searchLaptop" type="search" data-search value="${escapeHtml(searchQuery)}" placeholder="Contoh: A5 atau MacBook">
@@ -309,12 +302,7 @@ function renderDashboard() {
       </article>
 
       <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="section-label">Detail Alternatif</p>
-            <h2>Pilih laptop</h2>
-          </div>
-        </div>
+        ${renderChapterHeading('04', 'Detail Alternatif', 'Pilih laptop', 'Detail nilai kriteria ditampilkan dengan satuan yang sama seperti data awal.')}
         <div class="field">
           <label for="selectedLaptop">Alternatif</label>
           <select id="selectedLaptop" data-select-laptop>
@@ -413,13 +401,8 @@ function renderCalculation() {
   }
 
   return `
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <p class="section-label">Data yang Digunakan</p>
-          <h2>Alternatif dan kriteria</h2>
-        </div>
-      </div>
+    <section class="panel report-panel">
+      ${renderChapterHeading('01', 'Data yang Digunakan', 'Alternatif dan kriteria', 'Dataset aktif yang dipakai untuk perhitungan PROMETHEE.')}
       <p class="soft-copy">Benefit berarti semakin besar nilai semakin baik. Cost berarti semakin kecil nilai semakin baik.</p>
       <div class="split" style="margin-top: 16px">
         ${renderStaticAlternativeTable()}
@@ -427,24 +410,13 @@ function renderCalculation() {
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <p class="section-label">Matriks Indeks Preferensi Multikriteria</p>
-          <h2>Nilai pi(a,b)</h2>
-          <p class="soft-copy">Setiap sel pi(a,b) menunjukkan seberapa kuat alternatif baris mengungguli alternatif kolom berdasarkan seluruh kriteria.</p>
-        </div>
-      </div>
+    <section class="panel report-panel">
+      ${renderChapterHeading('02', 'Matriks Indeks Preferensi Multikriteria', 'Nilai pi(a,b)', 'Setiap sel pi(a,b) menunjukkan seberapa kuat alternatif baris mengungguli alternatif kolom berdasarkan seluruh kriteria.')}
       ${renderPreferenceMatrix(result)}
     </section>
 
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <p class="section-label">Hasil Flow dan Ranking</p>
-          <h2>Ranking PROMETHEE</h2>
-        </div>
-      </div>
+    <section class="panel report-panel">
+      ${renderChapterHeading('03', 'Hasil Flow dan Ranking', 'Ranking PROMETHEE', 'Leaving Flow, Entering Flow, dan Net Flow diringkas sebagai dasar keputusan akhir.')}
       ${renderRankingTable(result.ranking)}
     </section>
 
@@ -472,13 +444,8 @@ function renderStepByStepAnalysis(result) {
   const losses = comparison ? comparison.rows.length - wins : 0;
 
   return `
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <p class="section-label">Analisis Step-by-Step Rekomendasi</p>
-          <h2>${escapeHtml(best.name)}</h2>
-        </div>
-      </div>
+    <section class="panel report-panel">
+      ${renderChapterHeading('04', 'Analisis Step-by-Step Rekomendasi', escapeHtml(best.name), 'Pembacaan hasil untuk laptop ranking pertama dan alternatif pembanding.')}
       <div class="flow-strip">
         <div class="flow-chip"><span>Laptop terbaik</span><strong>${escapeHtml(best.code)}</strong></div>
         <div class="flow-chip"><span>Leaving Flow</span><strong>${formatNumber(best.leaving)}</strong></div>
@@ -579,6 +546,19 @@ function renderAbout() {
   `;
 }
 
+function renderChapterHeading(number, label, title, description = '') {
+  return `
+    <div class="chapter-heading">
+      <span class="chapter-number">${escapeHtml(number)}</span>
+      <div>
+        <p class="section-label">${escapeHtml(label)}</p>
+        <h2>${title}</h2>
+        ${description ? `<p class="soft-copy">${escapeHtml(description)}</p>` : ''}
+      </div>
+    </div>
+  `;
+}
+
 function renderRankingTable(rows, compact = false) {
   if (!rows.length) {
     return renderEmptyState('Tidak ada hasil', 'Coba ubah kata kunci pencarian atau tambahkan data alternatif.');
@@ -625,7 +605,7 @@ function renderNetFlowChart(rows) {
         const left = item.net < 0 ? 50 - width : 50;
         return `
           <div class="chart-row">
-            <div class="chart-label">${escapeHtml(item.code)} ${escapeHtml(item.name)}</div>
+            <div class="chart-label"><span class="chart-code">${escapeHtml(item.code)}</span><span class="chart-name">${escapeHtml(item.name)}</span></div>
             <div class="chart-track" aria-label="Net Flow ${escapeHtml(item.code)} ${formatNumber(item.net)}">
               <span class="chart-zero"></span>
               <span class="chart-bar ${item.net < 0 ? 'negative' : ''}" style="--bar-left: ${left}%; --bar-width: ${width}%;"></span>
